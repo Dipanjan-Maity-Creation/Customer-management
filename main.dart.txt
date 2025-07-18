@@ -1,0 +1,228 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:signup/HOME.dart';
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'CMS',
+      initialRoute: '/',
+      routes: {
+        '/': (context) => HomeScreen(),
+        '/admin_signup': (context) => AdminSignup(),
+        '/admin_login': (context) => AdminLogin(),
+        '/forgot_password': (context) => ForgotPassword(),
+        '/home_page': (context) => HomePage(),
+      },
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('CMS'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/abc.png',
+              width: 200,
+              height: 100,
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Cable Management System',
+              style: TextStyle(fontSize: 24.0),
+            ),
+            SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/admin_signup');
+              },
+              child: Text('Admin Signup'),
+            ),
+            SizedBox(height: 20),
+            OutlinedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/admin_login');
+              },
+              child: Text('Admin Login'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AdminSignup extends StatelessWidget {
+  final TextEditingController userIdController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+  TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Admin Signup'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: userIdController,
+              decoration: InputDecoration(labelText: 'User ID'),
+            ),
+            TextField(
+              controller: phoneNumberController,
+              decoration: InputDecoration(labelText: 'Phone Number'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: InputDecoration(labelText: 'Create Password'),
+              obscureText: true,
+            ),
+            TextField(
+              controller: confirmPasswordController,
+              decoration: InputDecoration(labelText: 'Confirm Password'),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                // Handle signup logic
+                final SharedPreferences prefs =
+                await SharedPreferences.getInstance();
+                prefs.setString('userId', userIdController.text);
+                prefs.setString('phoneNumber', phoneNumberController.text);
+                prefs.setString('password', passwordController.text);
+
+                Navigator.pop(context);
+              },
+              child: Text('Signup'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AdminLogin extends StatelessWidget {
+  final TextEditingController userIdController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Admin Login'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: userIdController,
+              decoration: InputDecoration(labelText: 'User ID'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                // Handle login logic
+                final SharedPreferences prefs =
+                await SharedPreferences.getInstance();
+                final String savedUserId = prefs.getString('userId') ?? '';
+                final String savedPassword = prefs.getString('password') ?? '';
+
+                if (userIdController.text == savedUserId &&
+                    passwordController.text == savedPassword) {
+                  Navigator.pushNamed(context, '/home_page');
+                } else {
+                  // Handle incorrect credentials
+                }
+              },
+              child: Text('Login'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/forgot_password');
+              },
+              child: Text('Forgot Password?'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ForgotPassword extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Forgot Password'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              decoration: InputDecoration(labelText: 'Phone Number'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Handle sending OTP logic
+              },
+              child: Text('Send OTP'),
+            ),
+            TextField(
+              decoration: InputDecoration(labelText: 'OTP'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Handle verifying OTP logic
+              },
+              child: Text('Verify OTP'),
+            ),
+            TextField(
+              decoration: InputDecoration(labelText: 'New Password'),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Handle resetting password logic
+              },
+              child: Text('Reset Password'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+

@@ -1,0 +1,106 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:signup/main.dart';
+import 'package:signup/update.dart';
+import 'package:signup/forum.dart';
+import 'package:signup/Cust info.dart';
+
+
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Home Page'),
+      ),
+      body: Column(
+        children: [
+          SizedBox(height: 1),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => CustomerInfoPage(),
+                    //   ),
+                    // );
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.blue),
+                    minimumSize: MaterialStateProperty.all(Size(100, 50)),
+                  ),
+                  child: Text('Cust Info.'),
+                ),
+
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CustForumPage(),
+                      ),
+                    );
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.orange),
+                    minimumSize: MaterialStateProperty.all(Size(100, 50)),
+                  ),
+                  child: Text('Cust Forum'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CustUpdatePage(),
+                      ),
+                    );
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.green),
+                    minimumSize: MaterialStateProperty.all(Size(100, 50)),
+                  ),
+                  child: Text('Cust Update'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Navigate to Revenue page
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.red),
+                    minimumSize: MaterialStateProperty.all(Size(100, 50)),
+                  ),
+                  child: Text('Revenue'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Navigate to Data page
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.purple),
+                    minimumSize: MaterialStateProperty.all(Size(100, 50)),
+                  ),
+                  child: Text('Data'),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 2),
+          // Show CustomerInfoPage directly in the HomePage
+          CustomerInfoPage(),
+          SizedBox(height: 2),
+          Center(
+            child: Text('Welcome to the CMS Home Page'),
+          ),
+        ],
+      ),
+    );
+  }
+}

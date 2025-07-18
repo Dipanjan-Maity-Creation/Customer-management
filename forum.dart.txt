@@ -1,0 +1,154 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:signup/HOME.dart';
+import 'package:signup/update.dart';
+
+import 'dart:convert';
+
+class CustForumPage extends StatefulWidget {
+  @override
+  _CustForumPageState createState() => _CustForumPageState();
+}
+
+class _CustForumPageState extends State<CustForumPage> {
+  String custId = '';
+  String custName = '';
+  String custPhoneNumber = '';
+  String selectedAddressType = '';
+  String villageName = '';
+  String townName = '';
+  String wardNo = '';
+  bool isSaved = false;
+
+  // Function to save customer information in SharedPreferences
+  Future<void> saveCustomerInformation() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Encode customer data to JSON string
+    String customerJson = json.encode({
+      'custId': custId,
+      'custName': custName,
+      'custPhoneNumber': custPhoneNumber,
+      'selectedAddressType': selectedAddressType,
+      'villageName': villageName,
+      'townName': townName,
+      'wardNo': wardNo,
+    });
+
+    // Get existing customer data list or initialize an empty list
+    List<String> customerList = prefs.getStringList('customerData') ?? [];
+
+    // Add the new customer JSON string to the list
+    customerList.add(customerJson);
+
+    // Save the updated list to shared preferences
+    await prefs.setStringList('customerData', customerList);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Customer Forum'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Cust ID'),
+              onChanged: (value) {
+                setState(() {
+                  custId = value;
+                });
+              },
+            ),
+            SizedBox(height: 10),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Cust Name'),
+              onChanged: (value) {
+                setState(() {
+                  custName = value;
+                });
+              },
+            ),
+            SizedBox(height: 10),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Cust Ph. No.'),
+              onChanged: (value) {
+                setState(() {
+                  custPhoneNumber = value;
+                });
+              },
+            ),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedAddressType = 'Village';
+                    });
+                  },
+                  child: Text('Village'),
+                ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedAddressType = 'Town';
+                    });
+                  },
+                  child: Text('Town'),
+                ),
+              ],
+            ),
+            if (selectedAddressType == 'Village')
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Village Name'),
+                onChanged: (value) {
+                  setState(() {
+                    villageName = value;
+                  });
+                },
+              ),
+            if (selectedAddressType == 'Town') ...[
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Town Name'),
+                onChanged: (value) {
+                  setState(() {
+                    townName = value;
+                  });
+                },
+              ),
+              SizedBox(height: 10),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Ward No'),
+                onChanged: (value) {
+                  setState(() {
+                    wardNo = value;
+                  });
+                },
+              ),
+            ],
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () async {
+                // Save button logic
+                // You can save the data here
+                await saveCustomerInformation();
+                setState(() {
+                  isSaved = true;
+                });
+              },
+              child: Text('Save'),
+            ),
+            if (isSaved) Text('Saved!'),
+          ],
+        ),
+      ),
+    );
+  }
+}

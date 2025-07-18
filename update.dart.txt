@@ -1,0 +1,433 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:signup/HOME.dart';
+import 'package:signup/forum.dart';
+
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+class CustUpdatePage extends StatefulWidget {
+  @override
+  _CustUpdatePageState createState() => _CustUpdatePageState();
+}
+
+class _CustUpdatePageState extends State<CustUpdatePage> {
+  String? custId;
+  String? custName;
+  String? custPhoneNumber;
+  String? selectedAddressType;
+  String? villageName;
+  String? townName;
+  String? wardNo;
+  String? errorMessage;
+  String? selectedYear;
+  String? selectedMonth;
+  double? rechargeAmount;
+  double? paymentAmount;
+  double? dueAmount;
+  double? advancePayment;
+  double totalDueAmount = 0;
+  double totalAdvancePayment = 0;
+  bool enablePaymentFields = false; // Flag to enable/disable payment fields
+  bool showFunctions = false; // Flag to show/hide functions
+
+  // Function to fetch customer information and previous due amounts from SharedPreferences
+  Future<void> getSavedCustomerInformation(String searchValue) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? customerListString = prefs.getStringList('customerData');
+    List<String>? paymentDataList = prefs.getStringList('paymentData');
+    bool customerFound = false;
+
+    if (customerListString != null) {
+      for (String customerJson in customerListString) {
+        Map<String, dynamic> customerData = json.decode(customerJson);
+        if (customerData['custId'] == searchValue || customerData['custPhoneNumber'] == searchValue) {
+          setState(() {
+            custId = customerData['custId'];
+            custName = customerData['custName'];
+            custPhoneNumber = customerData['custPhoneNumber'];
+            selectedAddressType = customerData['selectedAddressType'];
+            villageName = customerData['villageName'];
+            townName = customerData['townName'];
+            wardNo = customerData['wardNo'];
+            errorMessage = null; // Reset error message
+            showFunctions = true; // Show functions when customer found
+          });
+          customerFound = true;
+          break;
+        }
+      }
+    }
+
+    if (!customerFound) {
+      setState(() {
+        custId = null;
+        custName = null;
+        custPhoneNumber = null;
+        selectedAddressType = null;
+        villageName = null;
+        townName = null;
+        wardNo = null;
+        errorMessage = 'Please enter a valid cust ID/cust Ph no.';
+        showFunctions = false; // Hide functions when customer not found
+      });
+      return;
+    }
+
+    // Calculate total due amount and total advance payment for the customer
+    totalDueAmount = 0;
+    totalAdvancePayment = 0;
+    if (paymentDataList != null) {
+      for (String paymentJson in paymentDataList) {
+        Map<String, dynamic> paymentData = json.decode(paymentJson);
+        if (paymentData['custId'] == searchValue) {
+          totalDueAmount += paymentData['dueAmount'] ?? 0;
+          totalAdvancePayment += paymentData['advancePayment'] ?? 0;
+        }
+      }
+    }
+  }
+
+  // Function to calculate due amount and advance payment
+  void calculateDueAmountAndAdvancePayment() {
+    if (rechargeAmount != null && paymentAmount != null) {
+      double totalAmount = rechargeAmount! - paymentAmount!;
+      setState(() {
+        if (totalAmount >= 0) {
+          dueAmount = totalAmount;
+          advancePayment = 0;
+        } else {
+          dueAmount = 0;
+          advancePayment = totalAmount.abs();
+        }
+      });
+    }
+  }
+
+  // Function to save or update payment information in SharedPreferences
+  Future<void> savePaymentInformation() async {
+    if (rechargeAmount == null || paymentAmount == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please fill the amount values')));
+      return;
+    }
+
+    if (selectedYear == null || selectedMonth == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please select year and month')));
+      return;
+    }
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Check if payment data already exists for the same criteria
+    List<String>? existingPaymentDataList = prefs.getStringList('paymentData');
+    List<String> paymentDataList = existingPaymentDataList ?? [];
+
+    // Construct a map containing both payment information and customer details
+    Map<String, dynamic> paymentData = {
+      'selectedYear': selectedYear,
+      'selectedMonth': selectedMonth,
+      'rechargeAmount': rechargeAmount,
+      'paymentAmount': paymentAmount,
+      'dueAmount': dueAmount,
+      'advancePayment': advancePayment,
+      'custId': custId,
+      'custName': custName,
+      'custPhoneNumber': custPhoneNumber,
+      'selectedAddressType': selectedAddressType,
+      'villageName': villageName,
+      'townName': townName,
+      'wardNo': wardNo,
+    };
+
+    // Convert the map to a JSON string
+    String paymentDataJson = json.encode(paymentData);
+
+    // Check if there's existing data to update
+    if (existingPaymentDataList != null) {
+      bool dataUpdated = false;
+      for (int i = 0; i < existingPaymentDataList.length; i++) {
+        Map<String, dynamic> existingPaymentData = json.decode(existingPaymentDataList[i]);
+        if (existingPaymentData['custId'] == custId &&
+            existingPaymentData['selectedYear'] == selectedYear &&
+            existingPaymentData['selectedMonth'] == selectedMonth) {
+          // Update existing data
+          paymentDataList[i] = paymentDataJson;
+          dataUpdated = true;
+          break;
+        }
+      }
+      // If data is not updated, it means it's a new entry
+      if (!dataUpdated) {
+        paymentDataList.add(paymentDataJson);
+      }
+    } else {
+      // If there's no existing data, it's a new entry
+      paymentDataList.add(paymentDataJson);
+    }
+
+    // Save the updated payment data list
+    await prefs.setStringList('paymentData', paymentDataList);
+
+    // Reset the form after saving
+    setState(() {
+      rechargeAmount = null;
+      paymentAmount = null;
+      dueAmount = null;
+      advancePayment = null;
+    });
+
+    // Show "Saved Data" snackbar
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved Data')));
+  }
+
+  // Function to show all saved data based on criteria
+  void showSavedData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? paymentDataList = prefs.getStringList('paymentData');
+    List<Map<String, dynamic>> filteredData = [];
+
+    if (paymentDataList != null) {
+      for (String paymentJson in paymentDataList) {
+        Map<String, dynamic> paymentData = json.decode(paymentJson);
+        // Filter data based on criteria: custId or custPhoneNumber, rechargeAmount, and paymentAmount
+        if ((custId != null && paymentData['custId'] == custId) ||
+            (custPhoneNumber != null && paymentData['custPhoneNumber'] == custPhoneNumber) ||
+            (rechargeAmount != null && paymentData['rechargeAmount'] == rechargeAmount) ||
+            (paymentAmount != null && paymentData['paymentAmount'] == paymentAmount)) {
+          filteredData.add(paymentData);
+        }
+      }
+    }
+
+    // Reverse the list to display the latest saved information at the top
+    filteredData = filteredData.reversed.toList();
+
+    // Show filtered data
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Filtered Data'),
+          content: Container(
+            width: double.maxFinite,
+            child: ListView.builder(
+              itemCount: filteredData.length,
+              itemBuilder: (BuildContext context, int index) {
+                Map<String, dynamic> data = filteredData[index];
+                return ListTile(
+                  title: Text('Year: ${data['selectedYear']}, Month: ${data['selectedMonth']}'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Recharge Amount: ${data['rechargeAmount']}'),
+                      Text('Payment Amount: ${data['paymentAmount']}'),
+                    ],
+                  ),
+                  trailing: TextButton(
+                    onPressed: () {
+                      editPaymentData(data); // Populate fields for editing
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                    child: Text('Edit'),
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to populate payment fields with selected payment data for editing
+  void editPaymentData(Map<String, dynamic> data) {
+    setState(() {
+      selectedYear = data['selectedYear'];
+      selectedMonth = data['selectedMonth'];
+      rechargeAmount = data['rechargeAmount']?.toDouble();
+      paymentAmount = data['paymentAmount']?.toDouble();
+      calculateDueAmountAndAdvancePayment();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate adjusted total due amount and total advance payment
+    double adjustedTotalDueAmount = totalDueAmount - totalAdvancePayment;
+    double adjustedTotalAdvancePayment = totalAdvancePayment - totalDueAmount;
+
+    // Ensure adjusted amounts are not negative
+    adjustedTotalDueAmount = adjustedTotalDueAmount >= 0 ? adjustedTotalDueAmount : 0;
+    adjustedTotalAdvancePayment = adjustedTotalAdvancePayment >= 0 ? adjustedTotalAdvancePayment : 0;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Cust Update'),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selectedYear,
+                onChanged: (value) {
+                  setState(() {
+                    selectedYear = value;
+                    if (selectedMonth != null) {
+                      enablePaymentFields = true; // Enable payment fields when year and month are selected
+                    }
+                  });
+                },
+                items: List.generate(60, (index) {
+                  int year = DateTime.now().year - index;
+                  return DropdownMenuItem<String>(
+                    value: year.toString(),
+                    child: Text(year.toString()),
+                  );
+                }),
+                decoration: InputDecoration(labelText: 'Select Year'),
+              ),
+              SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: selectedMonth,
+                onChanged: (value) {
+                  setState(() {
+                    selectedMonth = value;
+                    if (selectedYear != null) {
+                      enablePaymentFields = true; // Enable payment fields when year and month are selected
+                    }
+                  });
+                },
+                items: [
+                  'January',
+                  'February',
+                  'March',
+                  'April',
+                  'May',
+                  'June',
+                  'July',
+                  'August',
+                  'September',
+                  'October',
+                  'November',
+                  'December',
+                ].map((month) {
+                  return DropdownMenuItem<String>(
+                    value: month,
+                    child: Text(month),
+                  );
+                }).toList(),
+                decoration: InputDecoration(labelText: 'Select Month'),
+              ),
+              SizedBox(height: 10),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Cust ID/Ph. No.'),
+                onChanged: (value) {
+                  setState(() {
+                    custId = value;
+                  });
+                },
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  if (custId != null) {
+                    await getSavedCustomerInformation(custId!);
+                  } else {
+                    setState(() {
+                      errorMessage = 'Please enter a valid cust ID/cust Ph no.';
+                      showFunctions = false; // Hide functions when customer not found
+                    });
+                  }
+                },
+                child: Text('Get Data'),
+              ),
+              SizedBox(height: 10),
+              if (errorMessage != null)
+                Text(
+                  errorMessage!,
+                  style: TextStyle(color: Colors.red),
+                ),
+              if (showFunctions) ...[
+                Text('Cust ID: $custId'),
+                Text('Cust Name: $custName'),
+                Text('Cust Ph. No.: $custPhoneNumber'),
+                Text('Selected Address Type: $selectedAddressType'),
+                if (selectedAddressType == 'Village') Text('Village Name: $villageName'),
+                if (selectedAddressType == 'Town') ...[
+                  Text('Town Name: $townName'),
+                  Text('Ward No: $wardNo'),
+                ],
+                SizedBox(height: 20),
+                Text('Payment Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                if (enablePaymentFields) ...[
+                  TextFormField(
+                    decoration: InputDecoration(labelText: 'Recharge Amount'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        rechargeAmount = double.tryParse(value);
+                        calculateDueAmountAndAdvancePayment();
+                      });
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    decoration: InputDecoration(labelText: 'Payment Amount'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        paymentAmount = double.tryParse(value);
+                        calculateDueAmountAndAdvancePayment();
+                      });
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  if (dueAmount != null) Text('Due Amount: $dueAmount'),
+                  if (advancePayment != null) Text('Advance Payment: $advancePayment'),
+                ],
+                SizedBox(height: 10),
+                Text('Total Due Amount: $adjustedTotalDueAmount'),
+                Text('Total Advance Payment: $adjustedTotalAdvancePayment'),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () async {
+                    await savePaymentInformation();
+                  },
+                  child: Text('Save'),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    showSavedData();
+                  },
+                  child: Text('Show Saved Data'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: CustUpdatePage(),
+  ));
+}
